@@ -1,4 +1,8 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateUserDto } from './user.dto';
 import { User } from '@prisma/client';
@@ -26,8 +30,7 @@ export class UserService {
       if (userNameAlreadyExists) {
         throw new ConflictException('Username already exists');
       }
-
-      return this.prisma.user.create({
+      const userCreated = await this.prisma.user.create({
         data: {
           username: user.username,
           email: user.email,
@@ -35,24 +38,63 @@ export class UserService {
           name: user.name,
         },
       });
+      delete userCreated.hash;
+      return userCreated;
     } catch (ex) {
       throw ex;
     }
   }
 
-  async userNameAlreadyExists(username: string): Promise<User> {
-    return this.prisma.user.findUnique({
+  async deleteUser(id: number) {
+    return await this.prisma.user.delete({
       where: {
-        username,
+        id,
       },
     });
   }
 
+  async changePassword(id: number, oldPassword: string, newPassword: string) {
+    const user = await this.prisma.user.findFirst({
+      where: {
+        id,
+      },
+    });
+
+    const isHashCorrect = argon.verify(user.hash, oldPassword);
+
+    if (isHashCorrect) {
+      const hash = await argon.hash(newPassword);
+      const userUpdated = await this.prisma.user.update({
+        data: {
+          hash,
+        },
+        where: {
+          id,
+        },
+      });
+
+      delete userUpdated.hash;
+      return userUpdated;
+    } else {
+      throw new UnauthorizedException('Senha antiga incorreta');
+    }
+  }
+
+  async userNameAlreadyExists(username: string): Promise<User> {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        username,
+      },
+    });
+    return user;
+  }
+
   async userEmailAlreadyExists(email: string): Promise<User> {
-    return this.prisma.user.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: {
         email,
       },
     });
+    return user;
   }
 }

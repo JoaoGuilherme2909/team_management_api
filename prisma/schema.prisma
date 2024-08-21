@@ -8,12 +8,13 @@ datasource db {
 }
 
 model User {
-  id       Int       @id @default(autoincrement())
-  username String    @unique @db.VarChar(25)
-  email    String    @unique
-  name     String
-  hash     String
-  Project  Project[] @relation("ProjectUser")
+  id              Int       @id @default(autoincrement())
+  username        String    @unique @db.VarChar(25)
+  email           String    @unique
+  name            String
+  hash            String
+  Project         Project[] @relation("ProjectUser")
+  ProjectsCreated Project[]
 
   @@map("users")
 }
@@ -23,16 +24,22 @@ model Project {
   name    String
   OwnerId Int
   User    User[] @relation("ProjectUser")
+  Tasks   Task[]
+  Owner   User?  @relation(fields: [OwnerId], references: [id])
 
   @@map("projects")
 }
 
 model Task {
-  id       Int    @id @default(autoincrement())
-  title    String
-  content  String
+  id      Int    @id @default(autoincrement())
+  title   String
+  content String
+
   status   status @relation(fields: [statusId], references: [id])
   statusId Int
+
+  Project   Project? @relation(fields: [projectId], references: [id])
+  projectId String?
 
   @@map("tasks")
 }

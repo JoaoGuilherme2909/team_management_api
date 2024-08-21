@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateProjectDto } from './project.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Project } from '@prisma/client';
@@ -57,6 +61,21 @@ export class ProjectService {
       },
     });
 
+    const isUserAlreadyAdded = await this.prismaService.project.findFirst({
+      where: {
+        id: projectId,
+        User: {
+          some: {
+            id: userId,
+          },
+        },
+      },
+    });
+
+    if (isUserAlreadyAdded !== null || isUserAlreadyAdded !== undefined) {
+      throw new ConflictException('User already added');
+    }
+
     return await this.prismaService.project.update({
       data: {
         User: {
@@ -81,6 +100,21 @@ export class ProjectService {
       },
     });
 
+    const isUserAlreadyRemoved = await this.prismaService.project.findFirst({
+      where: {
+        id: projectId,
+        User: {
+          some: {
+            id: userId,
+          },
+        },
+      },
+    });
+
+    if (isUserAlreadyRemoved === null || isUserAlreadyRemoved === undefined) {
+      throw new NotFoundException('User already removed or Not found');
+    }
+
     return await this.prismaService.project.update({
       data: {
         User: {
@@ -100,6 +134,22 @@ export class ProjectService {
         User: {
           some: {
             id: userId,
+          },
+        },
+      },
+      include: {
+        User: {
+          select: {
+            name: true,
+            username: true,
+            email: true,
+          },
+        },
+        Owner: {
+          select: {
+            name: true,
+            email: true,
+            username: true,
           },
         },
       },

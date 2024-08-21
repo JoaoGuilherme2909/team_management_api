@@ -15,6 +15,7 @@ model User {
   hash            String
   Project         Project[] @relation("ProjectUser")
   ProjectsCreated Project[]
+  Tasks           Task[]
 
   @@map("users")
 }
@@ -40,6 +41,9 @@ model Task {
 
   Project   Project? @relation(fields: [projectId], references: [id])
   projectId String?
+
+  User   User? @relation(fields: [userId], references: [id])
+  userId Int?
 
   @@map("tasks")
 }

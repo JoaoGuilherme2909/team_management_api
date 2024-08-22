@@ -38,6 +38,30 @@ export class TaskController {
   }
 
   @UseGuards(AuthGuard)
+  @Get('/user/:projectId/:userId')
+  @ApiOperation({ summary: 'get all tasks from a user' })
+  @ApiParam({
+    name: 'projectId',
+    required: true,
+    schema: { type: 'string' },
+  })
+  @ApiParam({
+    name: 'userId',
+    required: false,
+    schema: { type: 'int' },
+  })
+  async getAllTasksFromOtherUser(
+    @Req() req,
+    @Param('projectId') projectId: string,
+    @Param('userId') userId: string,
+  ) {
+    return await this.taskService.getAllTasksFromUser(
+      Number.parseInt(userId),
+      projectId,
+    );
+  }
+
+  @UseGuards(AuthGuard)
   @Post()
   @ApiOperation({ summary: 'Create a new task' })
   async createTask(@Body() task: CreateTaskDto, @Req() req) {
